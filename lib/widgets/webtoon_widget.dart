@@ -21,7 +21,7 @@ class WebtoonWidget extends StatelessWidget {
             builder: (context) => DetailScreen(
               webtoon: webtoon,
             ),
-            // fullscreenDialog: true,
+            fullscreenDialog: true,
           ),
         );
       },
