@@ -4,6 +4,7 @@ import 'package:flutter_playground/models/webtoon_episode_model.dart';
 import 'package:flutter_playground/models/webtoon_model.dart';
 import 'package:flutter_playground/services/api_service.dart';
 import 'package:flutter_playground/widgets/episode_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailScreen extends StatefulWidget {
   final WebtoonModel webtoon;
@@ -20,12 +21,43 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late Future<WebtoonDetailModel> webtoon;
   late Future<List<WebtoonEpisodeModel>> episodes;
+  late SharedPreferences prefs;
+  bool isLiked = false;
+
+  Future initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    final likedToons = prefs.getStringList('likedToons');
+    if (likedToons?.contains(widget.webtoon.id) == true) {
+      isLiked = true;
+    } else {
+      await prefs.setStringList("likedToons", []);
+    }
+    setState(() {
+      isLiked = true;
+    });
+  }
+
+  onHeartTap() async {
+    final likedToons = prefs.getStringList('likedToons');
+    if (likedToons != null) {
+      if (isLiked) {
+        likedToons.remove(widget.webtoon.id);
+      } else {
+        likedToons.add(widget.webtoon.id);
+      }
+      await prefs.setStringList('likedToons', likedToons);
+    }
+    setState(() {
+      isLiked = !isLiked;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     webtoon = ApiService.getWebtoonById(widget.webtoon.id);
     episodes = ApiService.getLatestEpisodesById(widget.webtoon.id);
+    initPrefs();
   }
 
   @override
@@ -36,6 +68,14 @@ class _DetailScreenState extends State<DetailScreen> {
         elevation: 2,
         backgroundColor: Colors.white,
         foregroundColor: Colors.green,
+        actions: [
+          IconButton(
+            onPressed: onHeartTap,
+            icon: Icon(
+              isLiked ? Icons.favorite : Icons.favorite_outline,
+            ),
+          ),
+        ],
         title: Text(
           widget.webtoon.title,
           style: const TextStyle(
